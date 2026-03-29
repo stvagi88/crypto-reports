@@ -11,12 +11,22 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Pull latest reports from obsidian-vault
         run: |
-          git remote add vault https://github.com/stvagi88/obsidian-vault.git
+          if ! git remote | grep -q vault; then
+            git remote add vault https://github.com/stvagi88/obsidian-vault.git
+          fi
           git fetch vault main
-          git checkout vault/main -- 09_project-summaries/daily/ || true
+          if git ls-tree vault/main 09_project-summaries/daily/ 2>/dev/null | grep -q crypto; then
+            mkdir -p 09_project-summaries/daily
+            git checkout vault/main -- 09_project-summaries/daily/
+            echo "Pulled reports from obsidian-vault"
+          else
+            echo "No reports in vault yet"
+          fi
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1
