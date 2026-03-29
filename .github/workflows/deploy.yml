@@ -12,27 +12,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Clone obsidian-vault for latest reports
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      - name: Clone obsidian-vault
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          mkdir -p /tmp/vault
           git clone https://${GITHUB_TOKEN}@github.com/stvagi88/obsidian-vault.git /tmp/vault
-          REPORT=$(ls /tmp/vault/09_project-summaries/daily/crypto-research-*.html 2>/dev/null | sort | tail -1)
+          REPORT=$(ls /tmp/vault/09_project-summaries/daily/crypto-research-*.html 2>/dev/null | sort -r | head -1)
           if [ -n "$REPORT" ]; then
             mkdir -p 09_project-summaries/daily
             cp "$REPORT" 09_project-summaries/daily/
-            echo "Copied: $REPORT"
-          else
-            echo "No reports found in vault"
-            ls /tmp/vault/09_project-summaries/daily/ 2>/dev/null || echo "Dir empty or missing"
+            echo "Deployed: $REPORT"
           fi
 
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/pages-action@v1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: 424d8b0febceebc669bc3d5397fbe053
-          projectName: crypto-reports
-          directory: 09_project-summaries/daily
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: 424d8b0febceebc669bc3d5397fbe053
+        run: |
+          wrangler pages deploy 09_project-summaries/daily --project-name=crypto-reports
