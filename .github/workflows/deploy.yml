@@ -11,21 +11,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Clone obsidian-vault for latest reports
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git clone https://github.com/stvagi88/obsidian-vault.git /tmp/vault
-          cd /tmp/vault
-          # Get the latest pushed daily report
-          REPORT=$(ls 09_project-summaries/daily/crypto-research-*.html 2>/dev/null | sort | tail -1)
+          mkdir -p /tmp/vault
+          git clone https://${GITHUB_TOKEN}@github.com/stvagi88/obsidian-vault.git /tmp/vault
+          REPORT=$(ls /tmp/vault/09_project-summaries/daily/crypto-research-*.html 2>/dev/null | sort | tail -1)
           if [ -n "$REPORT" ]; then
             mkdir -p 09_project-summaries/daily
             cp "$REPORT" 09_project-summaries/daily/
             echo "Copied: $REPORT"
           else
             echo "No reports found in vault"
+            ls /tmp/vault/09_project-summaries/daily/ 2>/dev/null || echo "Dir empty or missing"
           fi
 
       - name: Deploy to Cloudflare Pages
