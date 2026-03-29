@@ -5,35 +5,44 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Copy reports from source repo
+      - name: Pull latest reports from obsidian-vault
         run: |
-          git remote add source https://github.com/stvagi88/obsidian-vault.git
-          git fetch source
-          git checkout source/main -- 09_project-summaries/daily/ 2>/dev/null || true
-          
-      - name: Copy HTML template
-        run: |
-          git remote add source https://github.com/stvagi88/obsidian-vault.git
-          git fetch source
-          git checkout source/main -- 06_system/templates/daily-crypto-report.html 2>/dev/null || true
-          
-      - name: Find and copy all HTML files
+          git remote add vault https://github.com/stvagi88/obsidian-vault.git
+          git fetch vault main
+          git checkout vault/main -- 09_project-summaries/daily/ 2>/dev/null || true
+          git checkout vault/main -- 06_system/templates/daily-crypto-report.html 2>/dev/null || true
+
+      - name: Collect HTML files
         run: |
           mkdir -p _reports
-          find . -name "*.html" -not -path "./.git/*" -exec cp {} _reports/ \;
-          
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+          find . -name "*.html" -not -path "./.git/*" -not -path "./_reports/*" -exec cp {} _reports/ \;
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./_reports
-          publish_branch: gh-pages
+          path: './_reports'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
