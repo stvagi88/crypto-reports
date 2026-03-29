@@ -14,18 +14,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Pull latest reports from obsidian-vault
+      - name: Clone obsidian-vault for latest reports
         run: |
-          if ! git remote | grep -q vault; then
-            git remote add vault https://github.com/stvagi88/obsidian-vault.git
-          fi
-          git fetch vault main
-          if git ls-tree vault/main 09_project-summaries/daily/ 2>/dev/null | grep -q crypto; then
+          git clone https://github.com/stvagi88/obsidian-vault.git /tmp/vault
+          cd /tmp/vault
+          # Get the latest pushed daily report
+          REPORT=$(ls 09_project-summaries/daily/crypto-research-*.html 2>/dev/null | sort | tail -1)
+          if [ -n "$REPORT" ]; then
             mkdir -p 09_project-summaries/daily
-            git checkout vault/main -- 09_project-summaries/daily/
-            echo "Pulled reports from obsidian-vault"
+            cp "$REPORT" 09_project-summaries/daily/
+            echo "Copied: $REPORT"
           else
-            echo "No reports in vault yet"
+            echo "No reports found in vault"
           fi
 
       - name: Deploy to Cloudflare Pages
