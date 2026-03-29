@@ -12,29 +12,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install Wrangler
-        run: npm install -g wrangler
-
-      - name: Clone obsidian-vault
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git clone https://${GITHUB_TOKEN}@github.com/stvagi88/obsidian-vault.git /tmp/vault
-          REPORT=$(ls /tmp/vault/09_project-summaries/daily/crypto-research-*.html 2>/dev/null | sort -r | head -1)
-          if [ -n "$REPORT" ]; then
-            mkdir -p 09_project-summaries/daily
-            cp "$REPORT" 09_project-summaries/daily/
-            echo "Deployed: $REPORT"
-          fi
-
       - name: Deploy to Cloudflare Pages
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: 424d8b0febceebc669bc3d5397fbe053
         run: |
-          wrangler pages deploy 09_project-summaries/daily --project-name=crypto-reports
+          # Deploy from the crypto-reports repo root
+          npx wrangler pages deploy . --project-name=crypto-reports
